@@ -221,10 +221,13 @@ function setTrades(mode) {
 
       // Compensation
       var tradeTotal = parseFloat(portfolioSheet.getRange('TradeTotal').getValue());
-      tradeCompensation.setValue(tradeTotal);
+      var cash = parseFloat(0 + portfolioSheet.getRange('Cash').getValue());
+
+      tradeCompensation.setValue(tradeTotal + cash);
     }
 
     tradeCompensation.setValue('');
+    
   } catch (err) {
     logError(err.stack);
   }
