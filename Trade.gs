@@ -191,41 +191,28 @@ function setTrades(mode) {
     var prices = spreadsheet.getRangeByName('Price');
     var sellRange = spreadsheet.getRangeByName('Sell');
     var buyRange = spreadsheet.getRangeByName('Buy');
-    var tradeCompensation = spreadsheet.getRangeByName('TradeCompensation');
     const numRows = targetQuantities.getNumRows();
     
-    tradeCompensation.setValue('');
+    for (var i = 1; i <= numRows; i++) {
+      var targetQuantityCell = targetQuantities.getCell(i, 1);
+      var qty = targetQuantityCell.getValue();
+      var price = prices.getCell(i, 1).getValue();
+      
+      if ((!mode || mode == 'sell') && targetQuantityCell.getBackgroundColor() == '#ff9900') { // orange
+        var quantityCell = sellRange.getCell(i, 1);
+        var priceCell = sellRange.getCell(i, 2);
 
-    for (var precision = 0; precision < 2; precision++) {
-      for (var i = 1; i <= numRows; i++) {
-        var targetQuantityCell = targetQuantities.getCell(i, 1);
-        var qty = targetQuantityCell.getValue();
-        var price = prices.getCell(i, 1).getValue();
-        
-        if ((!mode || mode == 'sell') && targetQuantityCell.getBackgroundColor() == '#ff9900') { // orange
-          var quantityCell = sellRange.getCell(i, 1);
-          var priceCell = sellRange.getCell(i, 2);
-
-          quantityCell.setValue(qty * -1);
-          priceCell.setValue(price);
-        }
-        else if ((!mode || mode == 'buy') && targetQuantityCell.getBackgroundColor() == '#34a853') { // green
-          var quantityCell = buyRange.getCell(i, 1);
-          var priceCell = buyRange.getCell(i, 2);
-
-          quantityCell.setValue(qty);
-          priceCell.setValue(price);
-        }
+        quantityCell.setValue(qty * -1);
+        priceCell.setValue(price);
       }
+      else if ((!mode || mode == 'buy') && targetQuantityCell.getBackgroundColor() == '#34a853') { // green
+        var quantityCell = buyRange.getCell(i, 1);
+        var priceCell = buyRange.getCell(i, 2);
 
-      // Compensation
-      var tradeTotal = parseFloat(spreadsheet.getRangeByName('TradeTotal').getValue());
-      var cash = parseFloat(0 + spreadsheet.getRangeByName('Cash').getValue());
-
-      tradeCompensation.setValue(tradeTotal - cash);
+        quantityCell.setValue(qty);
+        priceCell.setValue(price);
+      }
     }
-
-    tradeCompensation.setValue('');
     
   } catch (err) {
     logError(err.stack);
