@@ -1,5 +1,4 @@
 var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-var portfolioSheet = spreadsheet.getSheetByName('Portfolio');
 var sellFlag = false;
 var buyFlag = false;
 
@@ -36,12 +35,12 @@ function addBuy(rowData) {
 }
 
 function sell() {
-  var usdBrl = parseFloat(portfolioSheet.getRange('USDBRL_Sell').getValue());
+  var usdBrl = parseFloat(spreadsheet.getRangeByName('USDBRL_Sell').getValue());
   
   if (usdBrl > 0)
   {
-    var sellRange = portfolioSheet.getRange('Sell');
-    var positions = portfolioSheet.getRange('Position');
+    var sellRange = spreadsheet.getRangeByName('Sell');
+    var positions = spreadsheet.getRangeByName('Position');
     const numRows = sellRange.getNumRows();
     var sellData = [];
     
@@ -96,12 +95,12 @@ function sell() {
 }
 
 function buy() {
-  var usdBrl = parseFloat(portfolioSheet.getRange('USDBRL_Buy').getValue());
+  var usdBrl = parseFloat(spreadsheet.getRangeByName('USDBRL_Buy').getValue());
   
   if (usdBrl > 0)
   {
-    var buyRange = portfolioSheet.getRange('Buy');
-    var positions = portfolioSheet.getRange('Position');
+    var buyRange = spreadsheet.getRangeByName('Buy');
+    var positions = spreadsheet.getRangeByName('Position');
     const numRows = buyRange.getNumRows();
     var buyData = [];
     
@@ -177,27 +176,27 @@ function buy() {
 }
 
 function clearTrades() {
-  portfolioSheet.getRange('Sell').setValue('');
-  portfolioSheet.getRange('Buy').setValue('');
+  spreadsheet.getRangeByName('Sell').setValue('');
+  spreadsheet.getRangeByName('Buy').setValue('');
 }
 
 function clearPrices() {
-  portfolioSheet.getRange('SellPrice').setValue('');
-  portfolioSheet.getRange('BuyPrice').setValue('');
+  spreadsheet.getRangeByName('SellPrice').setValue('');
+  spreadsheet.getRangeByName('BuyPrice').setValue('');
 }
 
 function setTrades(mode) {
   try {
-    var targetQuantities = portfolioSheet.getRange('TargetQuantity');
-    var prices = portfolioSheet.getRange('Price');
-    var sellRange = portfolioSheet.getRange('Sell');
-    var buyRange = portfolioSheet.getRange('Buy');
-    var tradeCompensation = portfolioSheet.getRange('TradeCompensation');
+    var targetQuantities = spreadsheet.getRangeByName('TargetQuantity');
+    var prices = spreadsheet.getRangeByName('Price');
+    var sellRange = spreadsheet.getRangeByName('Sell');
+    var buyRange = spreadsheet.getRangeByName('Buy');
+    var tradeCompensation = spreadsheet.getRangeByName('TradeCompensation');
     const numRows = targetQuantities.getNumRows();
     
     tradeCompensation.setValue('');
 
-    for (var i2 = 0; i2 < 2; i2++) {
+    for (var precision = 0; precision < 2; precision++) {
       for (var i = 1; i <= numRows; i++) {
         var targetQuantityCell = targetQuantities.getCell(i, 1);
         var qty = targetQuantityCell.getValue();
@@ -220,10 +219,10 @@ function setTrades(mode) {
       }
 
       // Compensation
-      var tradeTotal = parseFloat(portfolioSheet.getRange('TradeTotal').getValue());
-      var cash = parseFloat(0 + portfolioSheet.getRange('Cash').getValue());
+      var tradeTotal = parseFloat(spreadsheet.getRangeByName('TradeTotal').getValue());
+      var cash = parseFloat(0 + spreadsheet.getRangeByName('Cash').getValue());
 
-      tradeCompensation.setValue(tradeTotal + cash);
+      tradeCompensation.setValue(tradeTotal - cash);
     }
 
     tradeCompensation.setValue('');
@@ -235,9 +234,9 @@ function setTrades(mode) {
 
 function setPrices() {
   try {
-    var prices = portfolioSheet.getRange('Price');
-    var sellRange = portfolioSheet.getRange('Sell');
-    var buyRange = portfolioSheet.getRange('Buy');
+    var prices = spreadsheet.getRangeByName('Price');
+    var sellRange = spreadsheet.getRangeByName('Sell');
+    var buyRange = spreadsheet.getRangeByName('Buy');
     const numRows = prices.getNumRows();
     
     // Sell range
@@ -279,19 +278,19 @@ function setBuy() {
 }
 
 function setBalance() {
-  var cashCell = portfolioSheet.getRange('Cash');
+  var cashCell = spreadsheet.getRangeByName('Cash');
   var tradeTotal = 0;
   
   if (sellFlag) {
-    tradeTotal += parseFloat(portfolioSheet.getRange('SellTotal').getValue());
-    portfolioSheet.getRange('Sell').setValue('');
-    portfolioSheet.getRange('USDBRL_Sell').setValue('');
+    tradeTotal += parseFloat(spreadsheet.getRangeByName('SellTotal').getValue());
+    spreadsheet.getRangeByName('Sell').setValue('');
+    spreadsheet.getRangeByName('USDBRL_Sell').setValue('');
   }
   
   if (buyFlag) {
-    tradeTotal -= parseFloat(portfolioSheet.getRange('BuyTotal').getValue());
-    portfolioSheet.getRange('Buy').setValue('');
-    portfolioSheet.getRange('USDBRL_Buy').setValue('');
+    tradeTotal -= parseFloat(spreadsheet.getRangeByName('BuyTotal').getValue());
+    spreadsheet.getRangeByName('Buy').setValue('');
+    spreadsheet.getRangeByName('USDBRL_Buy').setValue('');
   }
 
   cashCell.setValue(parseFloat(cashCell.getValue()) + tradeTotal);
