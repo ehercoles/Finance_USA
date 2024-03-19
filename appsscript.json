@@ -1,26 +1,30 @@
 {
   "timeZone": "America/Sao_Paulo",
-  "dependencies": {
-  },
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
+  "dependencies": {},
   "sheets": {
-    "macros": [{
-      "menuName": "closeTrades",
-      "functionName": "closeTrades",
-      "defaultShortcut": "Ctrl+Alt+Shift+0"
-    }, {
-      "menuName": "setSells",
-      "functionName": "setSells",
-      "defaultShortcut": "Ctrl+Alt+Shift+1"
-    }, {
-      "menuName": "setBuys",
-      "functionName": "setBuys",
-      "defaultShortcut": "Ctrl+Alt+Shift+2"
-    }, {
-      "menuName": "endTrades",
-      "functionName": "endTrades",
-      "defaultShortcut": "Ctrl+Alt+Shift+0"
-    }]
+    "macros": [
+      {
+        "menuName": "closeTrades",
+        "functionName": "closeTrades",
+        "defaultShortcut": "Ctrl+Alt+Shift+0"
+      },
+      {
+        "menuName": "setSells",
+        "functionName": "setSells",
+        "defaultShortcut": "Ctrl+Alt+Shift+1"
+      },
+      {
+        "menuName": "setBuys",
+        "functionName": "setBuys",
+        "defaultShortcut": "Ctrl+Alt+Shift+2"
+      },
+      {
+        "menuName": "endTrades",
+        "functionName": "endTrades",
+        "defaultShortcut": "Ctrl+Alt+Shift+0"
+      }
+    ]
   }
 }

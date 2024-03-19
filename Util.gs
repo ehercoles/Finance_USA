@@ -1,7 +1,5 @@
-function deleteEmptyRows(sheet){
-  var maxRows = sheet.getMaxRows(); 
-  var lastRow = sheet.getLastRow();
-  sheet.deleteRows(lastRow+1, maxRows-lastRow);
+function logError(message) {
+  MailApp.sendEmail('ehercoles@gmail.com', 'GAS error', message);
 }
 
 //a.sort(sortFunction);

@@ -340,9 +340,6 @@ function setBalance() {
 function fillOrders() {
   
   try {
-    //var lock = LockService.getScriptLock();
-    //lock.waitLock(20000);
-    
     var usdBrl_buy = parseFloat(spreadsheet.getRangeByName('USDBRL_Buy').getValue().replace(',', '.'));
     var usdBrl_sell = parseFloat(spreadsheet.getRangeByName('USDBRL_Sell').getValue().replace(',', '.'));
 
@@ -357,15 +354,9 @@ function fillOrders() {
     setBalance();
     clearOrders();
     
-    //lock.releaseLock();
-
   } catch (err) {
     logError(err.stack);
   }
-}
-
-function logError(message) {
-  MailApp.sendEmail('ehercoles@gmail.com', 'GAS error', message);
 }
 
 function onOpen() {
