@@ -1,6 +1,4 @@
 var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-var sellFlag = false;
-var buyFlag = false;
 
 function addSell(rowData) {
   var sellSheet = spreadsheet.getSheetByName('Sell');
@@ -34,148 +32,134 @@ function addBuy(rowData) {
   buySheet.getRange('A2:I' + lastRow).setValues(rowData);
 }
 
-function sell() {
-  var usdBrl = parseFloat(spreadsheet.getRangeByName('USDBRL_Sell').getValue());
+function sell(usdBrl) {
+  var sellRange = spreadsheet.getRangeByName('Sell');
+  var positions = spreadsheet.getRangeByName('Position');
+  const numRows = sellRange.getNumRows();
+  var sellData = [];
   
-  if (usdBrl > 0)
-  {
-    var sellRange = spreadsheet.getRangeByName('Sell');
-    var positions = spreadsheet.getRangeByName('Position');
-    const numRows = sellRange.getNumRows();
-    var sellData = [];
-    
-    sellFlag = true;
-
-    for (var i = 1; i <= numRows; i++) {
-      var sellQty = sellRange.getCell(i, 1).getValue();
-      var sellAp = sellRange.getCell(i, 2).getValue();
-        
-      if(sellQty > 0 && sellAp > 0) {
-        /*
-          0: Date
-          1: Symbol
-          2: Qty
-          3: AP
-          4: USD AP
-          5: Sell qty
-          6: Sell AP
-          7: USDBRL
-          8: Sell Index
-        */
-        sellData.push([
-          new Date(),
-          positions.getCell(i, 1).getValue(),
-          positions.getCell(i, 2).getValue(),
-          positions.getCell(i, 3).getValue(),
-          positions.getCell(i, 4).getValue(),
-          sellQty,
-          sellAp,
-          usdBrl,
-          i
-        ]);
-      }
+  for (var i = 1; i <= numRows; i++) {
+    var sellQty = sellRange.getCell(i, 1).getValue();
+    var sellAp = sellRange.getCell(i, 2).getValue();
+      
+    if(sellQty > 0 && sellAp > 0) {
+      /*
+        0: Date
+        1: Symbol
+        2: Qty
+        3: AP
+        4: USD AP
+        5: Sell qty
+        6: Sell AP
+        7: USDBRL
+        8: Sell Index
+      */
+      sellData.push([
+        new Date(),
+        positions.getCell(i, 1).getValue(),
+        positions.getCell(i, 2).getValue(),
+        positions.getCell(i, 3).getValue(),
+        positions.getCell(i, 4).getValue(),
+        sellQty,
+        sellAp,
+        usdBrl,
+        i
+      ]);
     }
+  }
+  
+  if (sellData.length > 0) {
+    sellData.sort(sortFunction);
+    //console.log(sellData);
     
-    if (sellData.length > 0) {
-      sellData.sort(sortFunction);
-      //console.log(sellData);
+    addSell(sellData);
+    
+    for (var i = 0; i < sellData.length; i++) {
+      var qty = parseInt(sellData[i][2]);
+      var sellQty = parseInt(sellData[i][5]);
+      var newQty = qty - sellQty;
+      var sellIndex = sellData[i][8];
       
-      addSell(sellData);
-      
-      for (var i = 0; i < sellData.length; i++) {
-        var qty = parseInt(sellData[i][2]);
-        var sellQty = parseInt(sellData[i][5]);
-        var newQty = qty - sellQty;
-        var sellIndex = sellData[i][8];
-        
-        positions.getCell(sellIndex, 2).setValue(newQty);
-      }
+      positions.getCell(sellIndex, 2).setValue(newQty);
     }
   }
 }
 
-function buy() {
-  var usdBrl = parseFloat(spreadsheet.getRangeByName('USDBRL_Buy').getValue());
+function buy(usdBrl) {
+  var buyRange = spreadsheet.getRangeByName('Buy');
+  var positions = spreadsheet.getRangeByName('Position');
+  const numRows = buyRange.getNumRows();
+  var buyData = [];
   
-  if (usdBrl > 0)
-  {
-    var buyRange = spreadsheet.getRangeByName('Buy');
-    var positions = spreadsheet.getRangeByName('Position');
-    const numRows = buyRange.getNumRows();
-    var buyData = [];
+  for (var i = 1; i <= numRows; i++) {
+    var buyQty = parseInt(buyRange.getCell(i, 1).getValue());
+    var buyAp = parseFloat(buyRange.getCell(i, 2).getValue());
     
-    buyFlag = true;
-
-    for (var i = 1; i <= numRows; i++) {
-      var buyQty = parseInt(buyRange.getCell(i, 1).getValue());
-      var buyAp = parseFloat(buyRange.getCell(i, 2).getValue());
+    if (buyQty > 0 && buyAp > 0) {
+      var qty = parseInt(0 + positions.getCell(i, 2).getValue());
+      var ap = parseFloat(0 + positions.getCell(i, 3).getValue());
+      var usdAp = parseFloat(0 + positions.getCell(i, 4).getValue());
       
-      if (buyQty > 0 && buyAp > 0) {
-        var qty = parseInt(0 + positions.getCell(i, 2).getValue());
-        var ap = parseFloat(0 + positions.getCell(i, 3).getValue());
-        var usdAp = parseFloat(0 + positions.getCell(i, 4).getValue());
-        
-        if (ap == 0) {
-          ap = buyAp;
-        }
-        
-        if(usdAp == 0) {
-          usdAp = usdBrl;
-        }
-        
-        var newAp = ((qty * ap) + (buyQty * buyAp)) / (qty + buyQty);
-        var newUsdAp = ((qty * usdAp) + (buyQty * usdBrl)) / (qty + buyQty);
-        
-        /*
-          0: Date
-          1: Symbol
-          2: Qty
-          3: AP
-          4: USD AP
-          5: Buy qty
-          6: Buy AP
-          7: New AP
-          8: New USD AP
-          9: Buy Index
-        */
-        buyData.push([
-          new Date(),
-          positions.getCell(i, 1).getValue(),
-          qty,
-          ap,
-          usdAp,
-          buyQty,
-          buyAp,
-          newAp,
-          newUsdAp,
-          i
-        ]);
+      if (ap == 0) {
+        ap = buyAp;
       }
+      
+      if(usdAp == 0) {
+        usdAp = usdBrl;
+      }
+      
+      var newAp = ((qty * ap) + (buyQty * buyAp)) / (qty + buyQty);
+      var newUsdAp = ((qty * usdAp) + (buyQty * usdBrl)) / (qty + buyQty);
+      
+      /*
+        0: Date
+        1: Symbol
+        2: Qty
+        3: AP
+        4: USD AP
+        5: Buy qty
+        6: Buy AP
+        7: New AP
+        8: New USD AP
+        9: Buy Index
+      */
+      buyData.push([
+        new Date(),
+        positions.getCell(i, 1).getValue(),
+        qty,
+        ap,
+        usdAp,
+        buyQty,
+        buyAp,
+        newAp,
+        newUsdAp,
+        i
+      ]);
     }
+  }
+  
+  if (buyData.length > 0) {
+    buyData.sort(sortFunction);
+    //console.log(buyData);
     
-    if (buyData.length > 0) {
-      buyData.sort(sortFunction);
-      //console.log(buyData);
+    addBuy(buyData);
+    
+    for (var i = 0; i < buyData.length; i++) {
+      var qty = buyData[i][2];
+      var buyQty = buyData[i][5];
+      var newAp = buyData[i][7];
+      var newUsdAp = buyData[i][8];
+      var newQty = qty + buyQty;
+      var buyIndex = buyData[i][9];
       
-      addBuy(buyData);
-      
-      for (var i = 0; i < buyData.length; i++) {
-        var qty = buyData[i][2];
-        var buyQty = buyData[i][5];
-        var newAp = buyData[i][7];
-        var newUsdAp = buyData[i][8];
-        var newQty = qty + buyQty;
-        var buyIndex = buyData[i][9];
-        
-        positions.getCell(buyIndex, 2).setValue(newQty);
-        positions.getCell(buyIndex, 3).setValue(newAp);
-        positions.getCell(buyIndex, 4).setValue(newUsdAp);
-      }
+      positions.getCell(buyIndex, 2).setValue(newQty);
+      positions.getCell(buyIndex, 3).setValue(newAp);
+      positions.getCell(buyIndex, 4).setValue(newUsdAp);
     }
   }
 }
 
-function clearTrades() {
+function clearOrders() {
   spreadsheet.getRangeByName('Sell').setValue('');
   spreadsheet.getRangeByName('Buy').setValue('');
 }
@@ -185,7 +169,7 @@ function clearPrices() {
   spreadsheet.getRangeByName('BuyPrice').setValue('');
 }
 
-function setTrades(mode) {
+function setOrders(mode) {
   try {
     var targetQuantities = spreadsheet.getRangeByName('TargetQuantity');
     var prices = spreadsheet.getRangeByName('Price');
@@ -257,48 +241,124 @@ function setPrices() {
 }
 
 function setSell() {
-  setTrades('sell');
+  setOrders('sell');
 }
 
 function setBuy() {
-  setTrades('buy');
+  setOrders('buy');
+}
+
+function importCsv(sheetName) {
+
+  try {
+    const folder = DriveApp.getRootFolder();
+    let file = folder.getFilesByType(MimeType.CSV).next();
+    let data = Utilities.parseCsv(file.getBlob().getDataAsString());
+
+    data.splice(0, 1); // Skip header
+
+    var sheet = spreadsheet.insertSheet(sheetName);
+    let startRow = sheet.getLastRow() + 1;
+    let startCol = 1;
+    let numRows = data.length;
+    let numColumns = data[0].length;
+
+    sheet.getRange(startRow, startCol, numRows, numColumns).setValues(data);
+    file.setTrashed(true);
+    return true;
+
+  } catch {
+    return false;
+  }
+}
+
+function importOrders() {
+
+  try {
+    const sheetName = 'TMP_CSV';
+
+    if (!importCsv(sheetName)) {
+
+      SpreadsheetApp.getUi().alert('No CSV file found');
+      return;
+    }
+
+    var sheet = spreadsheet.getSheetByName(sheetName);
+    var input = sheet.getRange('B:F');
+    var numRows = input.getNumRows();
+
+    clearOrders();
+
+    for (var i = 1; i <= numRows; i++) {
+
+      let symbol_ = input.getCell(i, 2).getValue();
+      if (symbol_ == '') { break; }
+
+      let orderType = input.getCell(i, 1).getValue();
+      let qty = input.getCell(i, 5).getValue();
+      let price = input.getCell(i, 4).getValue();
+
+      let symbols = spreadsheet.getRangeByName('Symbol');
+      let rowIndex = symbols.createTextFinder(symbol_).findNext().getRowIndex() - 1;
+      let order = spreadsheet.getRangeByName(orderType); // get 'Buy' or 'Sell' named range
+
+      order.getCell(rowIndex, 1).setValue(qty);
+      order.getCell(rowIndex, 2).setValue(price);
+    }
+
+    spreadsheet.deleteSheet(sheet);
+
+  } catch (err) {
+    logError(err.stack);
+  }
 }
 
 function setBalance() {
-  var cashCell = spreadsheet.getRangeByName('Cash');
-  var tradeTotal = 0;
-  
-  if (sellFlag) {
-    tradeTotal += parseFloat(spreadsheet.getRangeByName('SellTotal').getValue());
-    spreadsheet.getRangeByName('Sell').setValue('');
-    spreadsheet.getRangeByName('USDBRL_Sell').setValue('');
-  }
-  
-  if (buyFlag) {
-    tradeTotal -= parseFloat(spreadsheet.getRangeByName('BuyTotal').getValue());
-    spreadsheet.getRangeByName('Buy').setValue('');
-    spreadsheet.getRangeByName('USDBRL_Buy').setValue('');
+
+  var cash = spreadsheet.getRangeByName('Cash');
+  var cashValue = cash.getValue();
+  var orderTotalValue = spreadsheet.getRangeByName('OrderTotal').getValue();
+
+  if (cashValue == '') {
+    cashValue = 0;
   }
 
-  cashCell.setValue(parseFloat(cashCell.getValue()) + tradeTotal);
+  cash.setValue(cashValue + orderTotalValue);
+
+  // Clear USDBRL
+  var usdBrl_buy = spreadsheet.getRangeByName('USDBRL_Buy');
+  var usdBrl_sell = spreadsheet.getRangeByName('USDBRL_Sell');
+
+  //usdBrl_buy.setValue('');
+  //usdBrl_sell.setValue('');
+  usdBrl_buy.clear();
+  usdBrl_sell.clear();
+  usdBrl_buy.setBorder(true, true, true, true, true, true);
+  usdBrl_sell.setBorder(true, true, true, true, true, true);
 }
 
-function endTrades() {
+function fillOrders() {
+  
   try {
     //var lock = LockService.getScriptLock();
     //lock.waitLock(20000);
     
-    sell();
-    buy();
-    
-    if (!(sellFlag || buyFlag)) {
+    var usdBrl_buy = parseFloat(spreadsheet.getRangeByName('USDBRL_Buy').getValue().replace(',', '.'));
+    var usdBrl_sell = parseFloat(spreadsheet.getRangeByName('USDBRL_Sell').getValue().replace(',', '.'));
+
+    if (!(usdBrl_buy > 0 && usdBrl_sell > 0)) {
+
       SpreadsheetApp.getUi().alert('USDBRL is required');
+      return;
     }
-    else {
-      setBalance();
-    }
+
+    buy(usdBrl_buy);
+    sell(usdBrl_sell);
+    setBalance();
+    clearOrders();
     
     //lock.releaseLock();
+
   } catch (err) {
     logError(err.stack);
   }
@@ -310,13 +370,15 @@ function logError(message) {
 
 function onOpen() {
   SpreadsheetApp.getUi()
-      .createMenu('Trade')
-      .addItem('Set', 'setTrades')
+      .createMenu('*Order')
+      .addItem('Set', 'setOrders')
       .addItem('Set Sell', 'setSell')
       .addItem('Set Buy', 'setBuy')
       .addItem('Set Prices', 'setPrices')
       .addItem('Clear Prices', 'clearPrices')
-      .addItem('Clear', 'clearTrades')
-      .addItem('End', 'endTrades')
+      .addItem('Clear', 'clearOrders')
+      .addItem('Import', 'importOrders')
+      .addSeparator()
+      .addItem('Fill', 'fillOrders')
       .addToUi();
 }
