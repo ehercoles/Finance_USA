@@ -70,7 +70,7 @@ function sell(usdBrl) {
   
   if (sellData.length > 0) {
     sellData.sort(sortFunction);
-    //console.log(sellData);
+    //Logger.log(sellData);
     
     addSell(sellData);
     
@@ -140,7 +140,7 @@ function buy(usdBrl) {
   
   if (buyData.length > 0) {
     buyData.sort(sortFunction);
-    //console.log(buyData);
+    //Logger.log(buyData);
     
     addBuy(buyData);
     
@@ -248,65 +248,41 @@ function setBuy() {
   setOrders('buy');
 }
 
-function importCsv(sheetName) {
+function importOrders() {
+
+  var data = [];
 
   try {
     const folder = DriveApp.getRootFolder();
     let file = folder.getFilesByType(MimeType.CSV).next();
-    let data = Utilities.parseCsv(file.getBlob().getDataAsString());
 
-    data.splice(0, 1); // Skip header
-
-    var sheet = spreadsheet.insertSheet(sheetName);
-    let startRow = sheet.getLastRow() + 1;
-    let startCol = 1;
-    let numRows = data.length;
-    let numColumns = data[0].length;
-
-    sheet.getRange(startRow, startCol, numRows, numColumns).setValues(data);
+    data = Utilities.parseCsv(file.getBlob().getDataAsString());
     file.setTrashed(true);
-    return true;
+    //Logger.log(data);
 
   } catch {
-    return false;
+    SpreadsheetApp.getUi().alert('No CSV file found');
   }
-}
-
-function importOrders() {
 
   try {
-    const sheetName = 'TMP_CSV';
+    const numRows = data.length;
+    
+    for (var i = 1; i < numRows; i++) {
 
-    if (!importCsv(sheetName)) {
-
-      SpreadsheetApp.getUi().alert('No CSV file found');
-      return;
-    }
-
-    var sheet = spreadsheet.getSheetByName(sheetName);
-    var input = sheet.getRange('B:F');
-    var numRows = input.getNumRows();
-
-    clearOrders();
-
-    for (var i = 1; i <= numRows; i++) {
-
-      let symbol_ = input.getCell(i, 2).getValue();
+      let symbol_ = data[i][2];
       if (symbol_ == '') { break; }
 
-      let orderType = input.getCell(i, 1).getValue();
-      let qty = input.getCell(i, 5).getValue();
-      let price = input.getCell(i, 4).getValue();
+      let orderType = data[i][1];
+      let qty = data[i][5];
+      let price = data[i][4];
 
       let symbols = spreadsheet.getRangeByName('Symbol');
       let rowIndex = symbols.createTextFinder(symbol_).findNext().getRowIndex() - 1;
-      let order = spreadsheet.getRangeByName(orderType); // get 'Buy' or 'Sell' named range
+      let order = spreadsheet.getRangeByName(orderType); // get named range 'Buy' or 'Sell'
 
       order.getCell(rowIndex, 1).setValue(qty);
       order.getCell(rowIndex, 2).setValue(price);
     }
-
-    spreadsheet.deleteSheet(sheet);
 
   } catch (err) {
     logError(err.stack);
