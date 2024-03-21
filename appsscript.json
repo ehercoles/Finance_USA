@@ -2,7 +2,16 @@
   "timeZone": "America/Sao_Paulo",
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
-  "dependencies": {},
+  "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "Util",
+        "version": "0",
+        "libraryId": "1MFDBzcITW-RIt0QvGVS_mx5EQWnRhzfcuuz27cbUrsJ-HTSMb9feygOc",
+        "developmentMode": true
+      }
+    ]
+  },
   "sheets": {
     "macros": [
       {
