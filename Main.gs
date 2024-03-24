@@ -270,6 +270,36 @@ function fillOrders() {
   }
 }
 
+function incrementThreshold() {
+
+    const range = spreadsheet.getRangeByName('Threshold');
+    const value = range.getValue();
+    const rule = range.getDataValidation();
+    
+    if (rule == null) return;
+
+    //const criteria = rule.getCriteriaType();
+    const args = rule.getCriteriaValues();
+    const validationValues = args[0].getValues().filter(Number);
+    const maxValue = validationValues[validationValues.length - 1];
+
+    //Logger.log(validationValues);
+
+    if (value < maxValue) {
+      range.setValue(value + 1);
+    }
+}
+
+function decrementThreshold() {
+  
+    const range = spreadsheet.getRangeByName('Threshold');
+    const value = range.getValue();
+
+    if (value > 1) {
+      range.setValue(value - 1);
+    }
+}
+
 function onOpen() {
   SpreadsheetApp.getUi()
       .createMenu('*Order')
