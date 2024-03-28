@@ -91,7 +91,7 @@ function addOrder(orderType, usdBrl) {
   // Copy formula to the new cells
   if (!isBuy) {
     const colStart = numCol + 1;
-    const colCount = 5;
+    const colCount = 3;
 
     let fromRange = orderSheet.getRange(rowStart-1, colStart, 1, colCount);
     fromRange.copyTo(orderSheet.getRange(rowStart, colStart, rowCount, colCount), {contentsOnly:false});
