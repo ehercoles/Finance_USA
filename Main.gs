@@ -1,5 +1,17 @@
 let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
+function onOpen() {
+
+  SpreadsheetApp.getUi()
+      .createMenu('*Order')
+      .addItem('Set', 'setOrders')
+      .addItem('Clear Prices', 'clearPrices')
+      .addItem('Clear', 'clearOrders')
+      .addSeparator()
+      .addItem('Fill', 'fillOrders')
+      .addToUi();
+}
+
 function addOrder(orderType, usdBrl) {
 
   //#region Set order
@@ -156,31 +168,39 @@ function setOrders() {
   }
 }
 
-function setPrices() {
+function incrementThreshold() {
 
-  try {
+    const threshold = spreadsheet.getRangeByName('Threshold');
+    const value = threshold.getValue();
+    const rule = threshold.getDataValidation();
+    
+    if (rule == null) return;
 
-    let priceRange = spreadsheet.getRangeByName('Price');
-    let buyRange = spreadsheet.getRangeByName('Buy');
-    let sellRange = spreadsheet.getRangeByName('Sell');
-    const numRows = priceRange.getNumRows();
+    //const criteria = rule.getCriteriaType();
+    const args = rule.getCriteriaValues();
+    const validationValues = args[0].getValues().filter(Number);
+    const maxValue = validationValues[validationValues.length - 1];
 
-    for (let i=1; i<=numRows; i++) {
+    //Logger.log(validationValues);
 
-      let price = priceRange.getCell(i, 1).getValue();
-      let buyQty = buyRange.getCell(i, 1).getValue();
-      let sellQty = sellRange.getCell(i, 1).getValue();
-      
-      if (buyQty > 0) { buyRange.getCell(i, 2).setValue(price); }
-      if (sellQty > 0) { sellRange.getCell(i, 2).setValue(price); }
+    if (value < maxValue) {
+
+      threshold.setValue(value+1);
     }
-
-  } catch (err) {
-
-    Util.logError(err.stack);
-  }
 }
 
+function decrementThreshold() {
+  
+    const threshold = spreadsheet.getRangeByName('Threshold');
+    const value = threshold.getValue();
+
+    if (value > 0) {
+      
+      threshold.setValue(value-1);
+    }
+}
+
+//#region USA version: do not replace nor replicate the code below
 function setBalance() {
 
   let cash = spreadsheet.getRangeByName('Cash');
@@ -215,48 +235,4 @@ function fillOrders() {
     Util.logError(err.stack);
   }
 }
-
-function incrementThreshold() {
-
-    const threshold = spreadsheet.getRangeByName('Threshold');
-    const value = threshold.getValue();
-    const rule = threshold.getDataValidation();
-    
-    if (rule == null) return;
-
-    //const criteria = rule.getCriteriaType();
-    const args = rule.getCriteriaValues();
-    const validationValues = args[0].getValues().filter(Number);
-    const maxValue = validationValues[validationValues.length - 1];
-
-    //Logger.log(validationValues);
-
-    if (value < maxValue) {
-
-      threshold.setValue(value + 1);
-    }
-}
-
-function decrementThreshold() {
-  
-    const threshold = spreadsheet.getRangeByName('Threshold');
-    const value = threshold.getValue();
-
-    if (value >= 1) {
-
-      threshold.setValue(value - 1);
-    }
-}
-
-function onOpen() {
-
-  SpreadsheetApp.getUi()
-      .createMenu('*Order')
-      .addItem('Set', 'setOrders')
-      .addItem('Set Prices', 'setPrices')
-      .addItem('Clear Prices', 'clearPrices')
-      .addItem('Clear', 'clearOrders')
-      .addSeparator()
-      .addItem('Fill', 'fillOrders')
-      .addToUi();
-}
+//#endregion
