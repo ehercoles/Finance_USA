@@ -1,15 +1,15 @@
-var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
 function addOrder(orderType, usdBrl) {
 
   //#region Set order
-  var orderRange = spreadsheet.getRangeByName(orderType);
-  var positions = spreadsheet.getRangeByName('Position');
-  var orderData = [];
-  var isBuy = orderType == 'Buy';
+  let orderRange = spreadsheet.getRangeByName(orderType);
+  let positions = spreadsheet.getRangeByName('Position');
+  let orderData = [];
+  let isBuy = orderType == 'Buy';
   const numRows = orderRange.getNumRows();
   
-  for (let i = 1; i <= numRows; i++) {
+  for (let i=1; i<=numRows; i++) {
 
     let orderQty = parseInt(orderRange.getCell(i, 1).getValue());
     let orderPx = parseFloat(orderRange.getCell(i, 2).getValue());
@@ -34,7 +34,7 @@ function addOrder(orderType, usdBrl) {
 
         var newQty = qty - orderQty;
         var newAvgCost = avgCost;
-        var newUsdAc = usdAc
+        var newUsdAc = usdAc;
       }
       
       orderData.push([
@@ -59,13 +59,13 @@ function addOrder(orderType, usdBrl) {
   //#region Set position
   let numCol = orderData[0].length;
 
-  for (let i = 0; i < orderData.length; i++) {
+  for (let i=0; i<orderData.length; i++) {
     
-    let order = orderData[i];
-    let orderIndex = orderData[i][numCol-1];
-    let qty = order[numCol-2];
-    let avgCost = order[numCol-4];
-    let usdAc = order[numCol-3];
+    let orderRow = orderData[i];
+    let orderIndex = orderRow[numCol-1];
+    let qty = orderRow[numCol-2];
+    let avgCost = orderRow[numCol-4];
+    let usdAc = orderRow[numCol-3];
     let values = [[qty, avgCost, usdAc]];
     let rangeStr = Utilities.formatString("B%s:D%s", orderIndex, orderIndex);
     let range = spreadsheet.getRange(rangeStr);
@@ -109,7 +109,8 @@ function clearOrders() {
 
   spreadsheet.getRangeByName('Sell').setValue('');
   spreadsheet.getRangeByName('Buy').setValue('');
-  clearPtaxInput();
+  spreadsheet.getRangeByName('PTAX_Buy').setValue('');
+  spreadsheet.getRangeByName('PTAX_Sell').setValue('');
 }
 
 function clearPrices() {
@@ -118,48 +119,37 @@ function clearPrices() {
   spreadsheet.getRangeByName('BuyPrice').setValue('');
 }
 
-function clearPtaxInput() {
-
-  spreadsheet.getRangeByName('PTAX_Buy').setValue('');
-  spreadsheet.getRangeByName('PTAX_Sell').setValue('');
-}
-
-function setOrders(mode) {
+function setOrders() {
 
   try {
 
-    var targetQuantities = spreadsheet.getRangeByName('TargetQuantity');
-    var prices = spreadsheet.getRangeByName('Price');
-    var sellRange = spreadsheet.getRangeByName('Sell');
-    var buyRange = spreadsheet.getRangeByName('Buy');
-    const numRows = targetQuantities.getNumRows();
+    let targetQuantityRange = spreadsheet.getRangeByName('TargetQuantity');
+    let priceRange = spreadsheet.getRangeByName('Price');
+    let buyRange = spreadsheet.getRangeByName('Buy');
+    let sellRange = spreadsheet.getRangeByName('Sell');
+    const numRows = targetQuantityRange.getNumRows();
+    const buyOrders = new Array(numRows).fill([undefined,undefined]);
+    const sellOrders = new Array(numRows).fill([undefined,undefined]);
 
-    clearOrders();
-    
-    for (var i = 1; i <= numRows; i++) {
+    for (let i=1; i<=numRows; i++) {
 
-      var targetQuantityCell = targetQuantities.getCell(i, 1);
-      var qty = targetQuantityCell.getValue();
-      var price = prices.getCell(i, 1).getValue();
+      let targetQuantityCell = targetQuantityRange.getCell(i, 1);
+      let qty = targetQuantityCell.getValue();
+      let price = priceRange.getCell(i,1).getValue();
       
-      if ((!mode || mode == 'sell') && targetQuantityCell.getBackgroundColor() == '#ff9900') { // orange
+      if (targetQuantityCell.getBackgroundColor() == '#ff9900') { // orange
 
-        var quantityCell = sellRange.getCell(i, 1);
-        var priceCell = sellRange.getCell(i, 2);
+        sellOrders[i-1] = [qty*-1, price];
 
-        quantityCell.setValue(qty * -1);
-        priceCell.setValue(price);
+      } else if (targetQuantityCell.getBackgroundColor() == '#34a853') { // green
 
-      } else if ((!mode || mode == 'buy') && targetQuantityCell.getBackgroundColor() == '#34a853') { // green
-
-        var quantityCell = buyRange.getCell(i, 1);
-        var priceCell = buyRange.getCell(i, 2);
-
-        quantityCell.setValue(qty);
-        priceCell.setValue(price);
+        buyOrders[i-1] = [qty, price];
       }
     }
-    
+
+    buyRange.setValues(buyOrders);
+    sellRange.setValues(sellOrders);
+
   } catch (err) {
 
     Util.logError(err.stack);
@@ -170,101 +160,19 @@ function setPrices() {
 
   try {
 
-    var prices = spreadsheet.getRangeByName('Price');
-    var sellRange = spreadsheet.getRangeByName('Sell');
-    var buyRange = spreadsheet.getRangeByName('Buy');
-    const numRows = prices.getNumRows();
-    
-    // Sell range
-    for (var i = 1; i <= numRows; i++) {
+    let priceRange = spreadsheet.getRangeByName('Price');
+    let buyRange = spreadsheet.getRangeByName('Buy');
+    let sellRange = spreadsheet.getRangeByName('Sell');
+    const numRows = priceRange.getNumRows();
 
-      var quantityCell = sellRange.getCell(i, 1);
-      var qty = quantityCell.getValue();
+    for (let i=1; i<=numRows; i++) {
+
+      let price = priceRange.getCell(i, 1).getValue();
+      let buyQty = buyRange.getCell(i, 1).getValue();
+      let sellQty = sellRange.getCell(i, 1).getValue();
       
-      if (qty > 0) {
-
-        var price = prices.getCell(i, 1).getValue();
-        var priceCell = sellRange.getCell(i, 2);
-        
-        priceCell.setValue(price);
-      }
-    }
-
-    // Buy range
-    for (var i = 1; i <= numRows; i++) {
-
-      var quantityCell = buyRange.getCell(i, 1);
-      var qty = quantityCell.getValue();
-      
-      if (qty > 0) {
-
-        var price = prices.getCell(i, 1).getValue();
-        var priceCell = buyRange.getCell(i, 2);
-        
-        priceCell.setValue(price);
-      }
-    }
-  } catch (err) {
-
-    Util.logError(err.stack);
-  }
-}
-
-function setBuy() {
-
-  setOrders('buy');
-}
-
-function setSell() {
-
-  setOrders('sell');
-}
-
-// TODO: fix parse result: price with 2 decimal places
-function importOrders() {
-
-  var data = [];
-
-  try {
-
-    const folder = DriveApp.getRootFolder();
-    let file = folder.getFilesByType(MimeType.CSV).next();
-
-    data = Utilities.parseCsv(file.getBlob().getDataAsString());
-
-    //file.setTrashed(true);
-    //Logger.log(data);
-
-  } catch {
-
-    SpreadsheetApp.getUi().alert('No CSV file found');
-  }
-
-  try {
-
-    const numRows = data.length;
-    const symbolIndex = 0;
-    const orderTypeIndex = 4;
-    const qtyIndex = 5;
-    const priceIndex = 8;
-    
-    for (var i=1; i<numRows; i++) {
-
-      let symbol_ = data[i][symbolIndex];
-      if (symbol_ == '') { break; }
-
-      let orderType = data[i][orderTypeIndex];
-      let qty = data[i][qtyIndex];
-      let price = data[i][priceIndex];
-
-      qty = qty.split(" ", 1)[0];
-
-      let symbols = spreadsheet.getRangeByName('Symbol');
-      let rowIndex = symbols.createTextFinder(symbol_).findNext().getRowIndex()-1;
-      let order = spreadsheet.getRangeByName(orderType); // get named range 'Buy' or 'Sell'
-
-      order.getCell(rowIndex, 1).setValue(qty);
-      order.getCell(rowIndex, 2).setValue(price);
+      if (buyQty > 0) { buyRange.getCell(i, 2).setValue(price); }
+      if (sellQty > 0) { sellRange.getCell(i, 2).setValue(price); }
     }
 
   } catch (err) {
@@ -275,22 +183,22 @@ function importOrders() {
 
 function setBalance() {
 
-  var cash = spreadsheet.getRangeByName('Cash');
-  var cashValue = cash.getValue();
-  var orderTotalValue = spreadsheet.getRangeByName('OrderTotal').getValue();
+  let cash = spreadsheet.getRangeByName('Cash');
+  let cashValue = cash.getValue();
+  let orderTotalValue = spreadsheet.getRangeByName('OrderTotal').getValue();
 
   if (cashValue == '') { cashValue = 0; }
 
   cash.setValue(cashValue + orderTotalValue);
-  clearPtaxInput();
+  clearOrders();
 }
 
 function fillOrders() {
   
   try {
 
-    var ptax_buy = parseFloat(spreadsheet.getRangeByName('PTAX_Buy').getValue().replace(',', '.'));
-    var ptax_sell = parseFloat(spreadsheet.getRangeByName('PTAX_Sell').getValue().replace(',', '.'));
+    let ptax_buy = parseFloat(spreadsheet.getRangeByName('PTAX_Buy').getValue().replace(',', '.'));
+    let ptax_sell = parseFloat(spreadsheet.getRangeByName('PTAX_Sell').getValue().replace(',', '.'));
 
     if (!(ptax_buy > 0 && ptax_sell > 0)) {
       
@@ -301,7 +209,6 @@ function fillOrders() {
     addOrder('Buy', ptax_buy);
     addOrder('Sell', ptax_sell);
     setBalance();
-    clearOrders();
     
   } catch (err) {
 
@@ -346,12 +253,9 @@ function onOpen() {
   SpreadsheetApp.getUi()
       .createMenu('*Order')
       .addItem('Set', 'setOrders')
-      .addItem('Set Sell', 'setSell')
-      .addItem('Set Buy', 'setBuy')
       .addItem('Set Prices', 'setPrices')
       .addItem('Clear Prices', 'clearPrices')
       .addItem('Clear', 'clearOrders')
-      //.addItem('Import', 'importOrders')
       .addSeparator()
       .addItem('Fill', 'fillOrders')
       .addToUi();
