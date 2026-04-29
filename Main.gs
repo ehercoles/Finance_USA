@@ -14,32 +14,35 @@ function onOpen() {
 
 function addOrder(orderType, usdBrl) {
 
-  //#region Set order
   let orderRange = spreadsheet.getRangeByName(orderType);
-  let positions = spreadsheet.getRangeByName('Position');
+  let positionRange = spreadsheet.getRangeByName('Position');
   let orderData = [];
-  let isBuy = orderType == 'Buy';
+  const isBuy = orderType == 'Buy';
   const numRows = orderRange.getNumRows();
   
+  //#region Set order
   for (let i=1; i<=numRows; i++) {
 
+    let orderSymbol = positionRange.getCell(i, 1).getValue();
     let orderQty = parseInt(orderRange.getCell(i, 1).getValue());
-    let orderPx = parseFloat(orderRange.getCell(i, 2).getValue());
+    let orderPrice = parseFloat(orderRange.getCell(i, 2).getValue());
     
-    if (orderQty > 0 && orderPx > 0) {
+    if (orderQty > 0 && orderPrice > 0) {
 
-      let qty = parseInt(0 + positions.getCell(i, 2).getValue());
-      let avgCost = parseFloat(0 + positions.getCell(i, 3).getValue());
-      let usdAc = parseFloat(0 + positions.getCell(i, 4).getValue());
+      let qty = parseInt(0 + positionRange.getCell(i, 2).getValue());
+      let avgCost = parseFloat(0 + positionRange.getCell(i, 3).getValue());
+      let usdAc = parseFloat(0 + positionRange.getCell(i, 4).getValue());
       
-      if (avgCost == 0) { avgCost = orderPx; }
-      
-      if(usdAc == 0) { usdAc = usdBrl; }
-
       if (isBuy) {
+        
+        if (qty == 0) {
+
+          avgCost = orderPrice;
+          usdAc = usdBrl;
+        }
 
         var newQty = qty + orderQty;
-        var newAvgCost = ((qty * avgCost) + (orderQty * orderPx)) / (qty + orderQty);
+        var newAvgCost = ((qty * avgCost) + (orderQty * orderPrice)) / (qty + orderQty);
         var newUsdAc = ((qty * usdAc) + (orderQty * usdBrl)) / (qty + orderQty);
 
       } else {
@@ -51,17 +54,17 @@ function addOrder(orderType, usdBrl) {
       
       orderData.push([
         new Date(),
-        positions.getCell(i, 1).getValue(),
+        orderSymbol,
         qty,
         avgCost,
         usdAc,
         orderQty,
-        orderPx,
-        usdBrl, // Sell only // Sell sheet range limit
-        newAvgCost,
-        newUsdAc, // Buy sheet range limit
+        orderPrice,
+        usdBrl, // Sheet "Sell" limit
         newQty,
-        i+1]); // order index
+        newAvgCost,
+        newUsdAc, // Sheet "Buy" limit
+        i+1]); // Order index
     }
   }
   
@@ -75,20 +78,20 @@ function addOrder(orderType, usdBrl) {
     
     let orderRow = orderData[i];
     let orderIndex = orderRow[numCol-1];
-    let qty = orderRow[numCol-2];
-    let avgCost = orderRow[numCol-4];
-    let usdAc = orderRow[numCol-3];
+    let qty = orderRow[8];
+    let avgCost = orderRow[9];
+    let usdAc = orderRow[10];
     let values = [[qty, avgCost, usdAc]];
-    let rangeStr = Utilities.formatString("B%s:D%s", orderIndex, orderIndex);
-    let range = spreadsheet.getRange(rangeStr);
+    let positionRangeStr = Utilities.formatString("B%s:D%s", orderIndex, orderIndex);
+    let positionRange2 = spreadsheet.getRange(positionRangeStr);
 
     if (qty == 0) {
 
-      range.setValue("");
+      positionRange2.setValue("");
 
     } else {
       
-      range.setValues(values);
+      positionRange2.setValues(values);
     }
   }
   //#endregion
@@ -96,8 +99,7 @@ function addOrder(orderType, usdBrl) {
   //#region Add order
   if (isBuy) {
     
-    Util.spliceColumn(orderData, 7, 1); // remove column USDBRL
-    orderData = Util.sliceColumn(orderData, 0, -2);
+    orderData = Util.sliceColumn(orderData, 0, -1);
     
   } else {
 
@@ -121,8 +123,8 @@ function clearOrders() {
 
   spreadsheet.getRangeByName('Sell').setValue('');
   spreadsheet.getRangeByName('Buy').setValue('');
-  spreadsheet.getRangeByName('PTAX_Buy').setValue('');
-  spreadsheet.getRangeByName('PTAX_Sell').setValue('');
+  spreadsheet.getRangeByName('UsdBrl_Buy').setValue('');
+  spreadsheet.getRangeByName('UsdBrl_Sell').setValue('');
 }
 
 function clearPrices() {
@@ -217,17 +219,17 @@ function fillOrders() {
   
   try {
 
-    let ptax_buy = parseFloat(spreadsheet.getRangeByName('PTAX_Buy').getValue().replace(',', '.'));
-    let ptax_sell = parseFloat(spreadsheet.getRangeByName('PTAX_Sell').getValue().replace(',', '.'));
+    let usdBrl_buy = parseFloat(spreadsheet.getRangeByName('UsdBrl_Buy').getValue().replace(',', '.'));
+    let usdBrl_sell = parseFloat(spreadsheet.getRangeByName('UsdBrl_Sell').getValue().replace(',', '.'));
 
-    if (!(ptax_buy > 0 && ptax_sell > 0)) {
+    if (!(usdBrl_buy > 0 && usdBrl_sell > 0)) {
       
       SpreadsheetApp.getUi().alert('PTAX input is required');
       return;
     }
 
-    addOrder('Buy', ptax_buy);
-    addOrder('Sell', ptax_sell);
+    addOrder('Buy', usdBrl_buy);
+    addOrder('Sell', usdBrl_sell);
     setBalance();
     
   } catch (err) {
