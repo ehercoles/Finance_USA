@@ -14,6 +14,7 @@ function onOpen() {
 
 function addOrder(orderType, usdBrl) {
 
+  let portfolioSheet = spreadsheet.getSheetByName("Portfolio");
   let orderRange = spreadsheet.getRangeByName(orderType);
   let positionRange = spreadsheet.getRangeByName('Position');
   let orderData = [];
@@ -64,10 +65,10 @@ function addOrder(orderType, usdBrl) {
         newQty,
         newAvgCost,
         newUsdAc, // Sheet "Buy" limit
-        i+1]); // Order index
+        i+2]); // Order index
     }
   }
-  
+
   if (orderData.length == 0) return;
   //#endregion
 
@@ -82,16 +83,15 @@ function addOrder(orderType, usdBrl) {
     let avgCost = orderRow[9];
     let usdAc = orderRow[10];
     let values = [[qty, avgCost, usdAc]];
-    let positionRangeStr = Utilities.formatString("B%s:D%s", orderIndex, orderIndex);
-    let positionRange2 = spreadsheet.getRange(positionRangeStr);
+    let positionRow = portfolioSheet.getRange(orderIndex, 2, 1, 2);
 
     if (qty == 0) {
 
-      positionRange2.setValue("");
+      positionRow.setValue("");
 
     } else {
       
-      positionRange2.setValues(values);
+      positionRow.setValues(values);
     }
   }
   //#endregion
@@ -168,38 +168,6 @@ function setOrders() {
 
     Util.logError(err.stack);
   }
-}
-
-function incrementThreshold() {
-
-    const threshold = spreadsheet.getRangeByName('Threshold');
-    const value = threshold.getValue();
-    const rule = threshold.getDataValidation();
-    
-    if (rule == null) return;
-
-    //const criteria = rule.getCriteriaType();
-    const args = rule.getCriteriaValues();
-    const validationValues = args[0].getValues().filter(Number);
-    const maxValue = validationValues[validationValues.length - 1];
-
-    //Logger.log(validationValues);
-
-    if (value < maxValue) {
-
-      threshold.setValue(value+1);
-    }
-}
-
-function decrementThreshold() {
-  
-    const threshold = spreadsheet.getRangeByName('Threshold');
-    const value = threshold.getValue();
-
-    if (value > 0) {
-      
-      threshold.setValue(value-1);
-    }
 }
 
 //#region USA version: do not replace nor replicate the code below
