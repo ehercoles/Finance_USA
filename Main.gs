@@ -83,7 +83,7 @@ function addOrder(orderType, usdBrl) {
     let avgCost = orderRow[9];
     let usdAc = orderRow[10];
     let values = [[qty, avgCost, usdAc]];
-    let positionRow = portfolioSheet.getRange(orderIndex, 2, 1, 2);
+    let positionRow = portfolioSheet.getRange(orderIndex, 2, 1, 3);
 
     if (qty == 0) {
 
