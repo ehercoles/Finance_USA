@@ -170,6 +170,27 @@ function setOrders() {
   }
 }
 
+function addIndexHistory() {
+
+  let index1 = spreadsheet.getRangeByName("Index1").getValue();
+  let index2 = spreadsheet.getRangeByName("Index2").getValue();
+  let dataSheet = spreadsheet.getSheetByName("Data");
+  let indexHistory = spreadsheet.getRangeByName("IndexHistory");
+  let indexHistoryLastRow = indexHistory.getNextDataCell(SpreadsheetApp.Direction.DOWN);
+  let indexHistoryLastRowIndex = indexHistoryLastRow.getRow();
+  let indexHistoryColumnIndex = indexHistoryLastRow.getColumn();
+
+  if (indexHistory.getLastRow() == indexHistoryLastRowIndex) {
+
+    dataSheet.insertRowAfter(indexHistoryLastRowIndex);
+  }
+
+  let values = [[new Date(), index1, index2]];
+
+  indexHistoryLastRow = dataSheet.getRange(++indexHistoryLastRowIndex, indexHistoryColumnIndex, 1, 3);
+  indexHistoryLastRow.setValues(values);
+}
+
 //#region USA version: do not replace nor replicate the code below
 function setBalance() {
 
