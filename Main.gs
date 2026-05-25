@@ -179,13 +179,17 @@ function addIndexHistory() {
   let indexHistoryLastRow = indexHistory.getNextDataCell(SpreadsheetApp.Direction.DOWN);
   let indexHistoryLastRowIndex = indexHistoryLastRow.getRow();
   let indexHistoryColumnIndex = indexHistoryLastRow.getColumn();
+  let today = new Date();
+  let dayOfTheWeek = today.getDay();
+  let values = [[today, index1, index2]];
+
+  // Skip if Saturday (6) or Sunday (0)
+  if (dayOfTheWeek == 0 || dayOfTheWeek == 6) return;
 
   if (indexHistory.getLastRow() == indexHistoryLastRowIndex) {
 
     dataSheet.insertRowAfter(indexHistoryLastRowIndex);
   }
-
-  let values = [[new Date(), index1, index2]];
 
   indexHistoryLastRow = dataSheet.getRange(++indexHistoryLastRowIndex, indexHistoryColumnIndex, 1, 3);
   indexHistoryLastRow.setValues(values);
