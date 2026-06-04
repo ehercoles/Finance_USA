@@ -7,6 +7,7 @@ function onOpen() {
       .addItem('Set', 'setOrders')
       .addItem('Clear Prices', 'clearPrices')
       .addItem('Clear', 'clearOrders')
+      .addItem('Import', 'importOrders')
       .addSeparator()
       .addItem('Fill', 'fillOrders')
       .addToUi();
@@ -193,6 +194,57 @@ function addIndexHistory() {
 
   indexHistoryLastRow = dataSheet.getRange(++indexHistoryLastRowIndex, indexHistoryColumnIndex, 1, 3);
   indexHistoryLastRow.setValues(values);
+}
+
+function importOrders() {
+
+  var data = [];
+
+  try {
+
+    const folder = DriveApp.getRootFolder();
+    let file = folder.getFilesByType(MimeType.CSV).next();
+
+    data = Utilities.parseCsv(file.getBlob().getDataAsString());
+    file.setTrashed(true);
+    //Logger.log(data);
+
+  } catch {
+
+    SpreadsheetApp.getUi().alert('No CSV file found');
+  }
+
+  try {
+
+    const numRows = data.length;
+    const SYMBOL_INDEX = 0;
+    const ORDER_TYPE_INDEX = 4;
+    const QTY_INDEX = 5;
+    const PRICE_INDEX = 8;
+    
+    for (var i=1; i<numRows; i++) {
+
+      let symbol_ = data[i][SYMBOL_INDEX];
+      if (symbol_ == '') { break; }
+
+      let orderType = data[i][ORDER_TYPE_INDEX];
+      let qty = data[i][QTY_INDEX];
+      let price = data[i][PRICE_INDEX];
+
+      qty = qty.split(" ", 1)[0];
+
+      let symbols = spreadsheet.getRangeByName('Symbol');
+      let rowIndex = symbols.createTextFinder(symbol_).findNext().getRowIndex()-2;
+      let order = spreadsheet.getRangeByName(orderType); // get named range 'Buy' or 'Sell'
+
+      order.getCell(rowIndex, 1).setValue(qty);
+      order.getCell(rowIndex, 2).setValue(price);
+    }
+
+  } catch (err) {
+
+    Util.logError(err.stack);
+  }
 }
 
 //#region USA version: do not replace nor replicate the code below
